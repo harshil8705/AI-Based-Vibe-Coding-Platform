@@ -1,0 +1,4 @@
+spring:
+  application:
+    name: vibeCoding
+    description: This is a Vibe Coding Platform similar to Lovable, Replit etc.
