@@ -111,7 +111,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         ProjectMemberId projectMemberId = new ProjectMemberId(projectId, memberId);
-        if (projectMemberRepository.existsById(projectMemberId)) {
+        if (!projectMemberRepository.existsById(projectMemberId)) {
             throw new RuntimeException("Member doesn't exist in Project!!");
         }
 
