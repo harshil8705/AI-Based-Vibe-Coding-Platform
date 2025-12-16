@@ -22,18 +22,15 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    String email;
-    String passwordHash;
+    String username;
+    String password;
     String name;
-
-    String avatarUrl;
 
     @CreationTimestamp
     Instant createdAt;
 
     @UpdateTimestamp
     Instant updatedAt;
-
 
     Instant deletedAt; // safe delete. Not deleting user actually from the database. Just getting rid of deleted User.
 
