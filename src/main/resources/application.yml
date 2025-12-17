@@ -13,12 +13,16 @@ spring:
 # JPA/Hibernate Configurations:
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+
+# JWT Configurations:
+jwt:
+  secret-key: kjfhlahflwholwhlfhlzshlfohoreuhkjnlhrsofhsoufhlksjdhlvhoeruyglksjdvluierltyfklsuhfloweuirvhlkwjvnuilwegflksjdjf
 
 # Port Configurations:
 server:
