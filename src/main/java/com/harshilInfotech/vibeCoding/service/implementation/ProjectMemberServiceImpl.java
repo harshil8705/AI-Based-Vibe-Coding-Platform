@@ -111,4 +111,5 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     public Project getAccessibleProject(Long projectId, Long userId) {
         return projectRepository.findAccessibleProjectById(projectId, userId).orElseThrow();
     }
+
 }
