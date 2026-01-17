@@ -8,6 +8,7 @@ import com.harshilInfotech.vibeCoding.entity.ProjectMember;
 import com.harshilInfotech.vibeCoding.entity.ProjectMemberId;
 import com.harshilInfotech.vibeCoding.entity.User;
 import com.harshilInfotech.vibeCoding.enums.ProjectRole;
+import com.harshilInfotech.vibeCoding.error.BadRequestException;
 import com.harshilInfotech.vibeCoding.error.ResourceNotFoundException;
 import com.harshilInfotech.vibeCoding.mapper.ProjectMapper;
 import com.harshilInfotech.vibeCoding.repository.ProjectMemberRepository;
@@ -15,6 +16,7 @@ import com.harshilInfotech.vibeCoding.repository.ProjectRepository;
 import com.harshilInfotech.vibeCoding.repository.UserRepository;
 import com.harshilInfotech.vibeCoding.security.AuthUtil;
 import com.harshilInfotech.vibeCoding.service.ProjectService;
+import com.harshilInfotech.vibeCoding.service.SubscriptionService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +38,15 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMapper projectMapper;
     ProjectMemberRepository projectMemberRepository;
     AuthUtil authUtil;
+    SubscriptionService subscriptionService;
 
     @Override
     public ProjectResponse createProject(ProjectRequest request) {
+
+        if (!subscriptionService.canCreateProject()) {
+            throw new BadRequestException("User cannot create a New Project with current Plan, Upgrad plan now.");
+        }
+
         Long userId = authUtil.getCurrentUserId();
 //        User owner = userRepository.findById(userId)
 //                .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));

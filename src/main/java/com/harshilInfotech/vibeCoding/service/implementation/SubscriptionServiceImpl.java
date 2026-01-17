@@ -8,6 +8,7 @@ import com.harshilInfotech.vibeCoding.enums.SubscriptionStatus;
 import com.harshilInfotech.vibeCoding.error.ResourceNotFoundException;
 import com.harshilInfotech.vibeCoding.mapper.SubscriptionMapper;
 import com.harshilInfotech.vibeCoding.repository.PlanRepository;
+import com.harshilInfotech.vibeCoding.repository.ProjectMemberRepository;
 import com.harshilInfotech.vibeCoding.repository.SubscriptionRepository;
 import com.harshilInfotech.vibeCoding.repository.UserRepository;
 import com.harshilInfotech.vibeCoding.security.AuthUtil;
@@ -30,6 +31,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionMapper subscriptionMapper;
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+
+    private final Integer FREE_TIER_PROJECTS_ALLOWED = 1;
 
     @Override
     public SubscriptionResponse getCurrentSubscription() {
@@ -158,8 +162,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     }
 
+    @Override
+    public boolean canCreateProject() {
 
-//    Utility Methods:->>
+        Long userId = authUtil.getCurrentUserId();
+        SubscriptionResponse currentSubscription = getCurrentSubscription();
+        int countOfOwnedProjects = projectMemberRepository.countProjectOwnedByUser(userId);
+
+        if (currentSubscription.plan() == null) {
+            return countOfOwnedProjects < FREE_TIER_PROJECTS_ALLOWED;
+        }
+
+        return countOfOwnedProjects < currentSubscription.plan().maxProjects();
+
+    }
+
+    //    Utility Methods:->>
     private User getUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));

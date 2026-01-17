@@ -19,4 +19,6 @@ public interface SubscriptionService {
 
     void markSubscriptionPastDue(String subId);
 
+    boolean canCreateProject();
+
 }
