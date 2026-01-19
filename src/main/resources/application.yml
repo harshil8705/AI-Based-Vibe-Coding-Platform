@@ -20,6 +20,16 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+# Gemini-AI Configurations:
+  ai:
+    google:
+      genai:
+        api-key: ${GOOGLE_GENAI_APIKEY}
+        chat:
+          options:
+            model: gemini-3-flash-preview
+            temperature: 0.0
+
 # JWT Configurations:
 jwt:
   secret-key: ${JWT_SECRET}
