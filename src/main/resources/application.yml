@@ -48,3 +48,9 @@ client:
 # Port Configurations:
 server:
   port: 9090
+
+# Logging Configurations:
+logging:
+  level:
+    org.springframework.ai:
+      chat.client: DEBUG
