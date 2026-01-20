@@ -1,5 +1,7 @@
 package com.harshilInfotech.vibeCoding.service.implementation;
 
+import com.harshilInfotech.vibeCoding.llm.PromptUtils;
+import com.harshilInfotech.vibeCoding.repository.ProjectMemberRepository;
 import com.harshilInfotech.vibeCoding.security.AuthUtil;
 import com.harshilInfotech.vibeCoding.service.AiGenerationService;
 import com.harshilInfotech.vibeCoding.service.ProjectFileService;
@@ -24,14 +26,28 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private final ChatClient chatClient;
     private final AuthUtil authUtil;
     private final ProjectFileService projectFileService;
+    private final ProjectMemberRepository projectMemberRepository;
 
     private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
     @Override
     @PreAuthorize("@security.canEditProject(#projectId)")
     public Flux<String> streamResponse(String userMessage, Long projectId) {
+        log.info("streamResponse called - projectId: {}", projectId);
 
         Long userId = authUtil.getCurrentUserId();
+        log.info("Current userId: {}", userId);
+
+
+        // Check permission manually BEFORE starting the stream
+//        ProjectMember member = projectMemberRepository
+//                .findById(new ProjectMemberId(projectId, userId))
+//                .orElseThrow(() -> new AccessDeniedException("No access to project"));
+//
+//        if (!member.getProjectRole().getPermissions().contains(ProjectPermission.EDIT)) {
+//            return Flux.error(new AccessDeniedException("Insufficient permissions"));
+//        }
+
         createChatSessionIfNotExists(projectId, userId);
 
         Map<String, Object> advisorParams = Map.of(
@@ -43,7 +59,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
         return chatClient
                 .prompt()
-                .system("SYSTEM_PROMPT_HERE")
+                .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
                 .user(userMessage)
                 .advisors(
                         advisorSpec -> {

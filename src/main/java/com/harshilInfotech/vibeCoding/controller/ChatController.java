@@ -2,7 +2,6 @@ package com.harshilInfotech.vibeCoding.controller;
 
 import com.harshilInfotech.vibeCoding.dto.chat.ChatRequest;
 import com.harshilInfotech.vibeCoding.service.AiGenerationService;
-import com.harshilInfotech.vibeCoding.service.implementation.AiGenerationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;

@@ -1,12 +1,14 @@
 package com.harshilInfotech.vibeCoding.llm;
 
-public class Prompt {
+import java.time.LocalDate;
 
-    private final String CODE_GENERATION_SYSTEM_PROMPT = """
+public class PromptUtils {
+
+    public final static String CODE_GENERATION_SYSTEM_PROMPT = """
             You are an elite React architect creating production-ready web applications. You assist users by chatting and making real-time code changes that appear instantly in a live preview window.
             
                         ## Context
-                        Date: ""\" + LocalDate.now() + ""\"
+                        Date: """ + LocalDate.now() + """
                         Stack: React 18 + TypeScript + Vite + Tailwind CSS 4 + daisyUI v5
                         Interface: Chat on left, live preview (iframe) on right with instant HMR
                         Template: Starting from pre-configured template with all dependencies installed
