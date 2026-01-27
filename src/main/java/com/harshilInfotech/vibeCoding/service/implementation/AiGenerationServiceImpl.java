@@ -2,6 +2,7 @@ package com.harshilInfotech.vibeCoding.service.implementation;
 
 import com.harshilInfotech.vibeCoding.llm.PromptUtils;
 import com.harshilInfotech.vibeCoding.llm.advisors.FileTreeContextAdvisor;
+import com.harshilInfotech.vibeCoding.llm.tools.CodeGenerationTools;
 import com.harshilInfotech.vibeCoding.security.AuthUtil;
 import com.harshilInfotech.vibeCoding.service.AiGenerationService;
 import com.harshilInfotech.vibeCoding.service.ProjectFileService;
@@ -58,10 +59,13 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
         StringBuilder fullResponseBuffer = new StringBuilder();
 
+        CodeGenerationTools codeGenerationTools = new CodeGenerationTools(projectFileService, projectId);
+
         return chatClient
                 .prompt()
                 .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
                 .user(userMessage)
+                .tools(codeGenerationTools)
                 .advisors(
                         advisorSpec -> {
                             advisorSpec.params(advisorParams);
