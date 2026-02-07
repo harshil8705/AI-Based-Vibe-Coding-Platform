@@ -13,10 +13,10 @@ import com.harshilInfotech.vibeCoding.repository.SubscriptionRepository;
 import com.harshilInfotech.vibeCoding.repository.UserRepository;
 import com.harshilInfotech.vibeCoding.security.AuthUtil;
 import com.harshilInfotech.vibeCoding.service.SubscriptionService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Set;
@@ -35,14 +35,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final Integer FREE_TIER_PROJECTS_ALLOWED = 100;
 
+
     @Override
     public SubscriptionResponse getCurrentSubscription() {
         Long userId = authUtil.getCurrentUserId();
 
         var currentSubscription = subscriptionRepository.findByUserIdAndStatusIn(userId, Set.of(
-                SubscriptionStatus.ACTIVE,
-                SubscriptionStatus.PAST_DUE,
-                SubscriptionStatus.TRAILING
+                SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE,
+                SubscriptionStatus.TRIALING
         )).orElse(
                 new Subscription()
         );
@@ -54,7 +54,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void activateSubscription(Long userId, Long planId, String subscriptionId, String customerId) {
 
         boolean exists = subscriptionRepository.existsByStripeSubscriptionId(subscriptionId);
-
         if (exists) return;
 
         User user = getUser(userId);
@@ -66,71 +65,55 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .stripeSubscriptionId(subscriptionId)
                 .status(SubscriptionStatus.INCOMPLETE)
                 .build();
-        subscriptionRepository.save(subscription);
 
+        subscriptionRepository.save(subscription);
     }
 
     @Override
     @Transactional
-    public void updateSubscription(String gatewaySubscriptionId, SubscriptionStatus status, Instant periodStart, Instant periodEnd, Boolean cancelAtPeriodEnd, Long planId) {
+    public void updateSubscription(String gatewaySubscriptionId, SubscriptionStatus status, Instant periodStart,
+                                   Instant periodEnd, Boolean cancelAtPeriodEnd, Long planId) {
         Subscription subscription = getSubscription(gatewaySubscriptionId);
 
-        boolean subscriptionHasBeenUpdated = false;
+        boolean hasSubscriptionUpdated = false;
 
-        if (status != null && status != subscription.getStatus()) {
+        if(status != null && status != subscription.getStatus()) {
             subscription.setStatus(status);
-            subscriptionHasBeenUpdated = true;
+            hasSubscriptionUpdated = true;
         }
 
-        if (periodStart != null && !periodStart.equals(subscription.getCurrentPeriodStart())) {
+        if(periodStart != null && !periodStart.equals(subscription.getCurrentPeriodStart())) {
             subscription.setCurrentPeriodStart(periodStart);
-            subscriptionHasBeenUpdated = true;
+            hasSubscriptionUpdated = true;
         }
 
-        if (periodEnd != null && !periodEnd.equals(subscription.getCurrentPeriodEnd())) {
+        if(periodEnd != null && !periodEnd.equals(subscription.getCurrentPeriodEnd())) {
             subscription.setCurrentPeriodEnd(periodEnd);
-            subscriptionHasBeenUpdated = true;
+            hasSubscriptionUpdated = true;
         }
 
-        if (cancelAtPeriodEnd != null && cancelAtPeriodEnd != subscription.getCancelAtPeriodEnd()) {
+        if(cancelAtPeriodEnd != null && cancelAtPeriodEnd != subscription.getCancelAtPeriodEnd()) {
             subscription.setCancelAtPeriodEnd(cancelAtPeriodEnd);
-            subscriptionHasBeenUpdated = true;
-
-            if (cancelAtPeriodEnd) {
-                subscription.setStatus(SubscriptionStatus.CANCELED);
-                log.info("Subscription {} marked as Canceled (will end at period end: {})",
-                        gatewaySubscriptionId, periodEnd);
-            }
+            hasSubscriptionUpdated = true;
         }
 
-        if (planId != null && planId != subscription.getPlan().getId()) {
-
+        if(planId != null && !planId.equals(subscription.getPlan().getId())) {
             Plan newPlan = getPlan(planId);
             subscription.setPlan(newPlan);
-            subscriptionHasBeenUpdated = true;
-
+            hasSubscriptionUpdated = true;
         }
 
-        if (subscriptionHasBeenUpdated) {
+        if(hasSubscriptionUpdated) {
             log.debug("Subscription has been updated: {}", gatewaySubscriptionId);
             subscriptionRepository.save(subscription);
         }
-
     }
 
     @Override
     public void cancelSubscription(String gatewaySubscriptionId) {
-
         Subscription subscription = getSubscription(gatewaySubscriptionId);
-
-        if (subscription.getStatus() != SubscriptionStatus.CANCELED) {
-            subscription.setStatus(SubscriptionStatus.CANCELED);
-            subscriptionRepository.save(subscription);
-            log.info("Subscription {} has been canceled", gatewaySubscriptionId);
-        } else {
-            log.info("Subscription {} was already marked as CANCELED, now actually deleted from Stripe", gatewaySubscriptionId);
-        }
-
+        subscription.setStatus(SubscriptionStatus.CANCELED);
+        subscriptionRepository.save(subscription);
     }
 
     @Override
@@ -141,7 +124,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setCurrentPeriodStart(newStart);
         subscription.setCurrentPeriodEnd(periodEnd);
 
-        if (subscription.getStatus() == SubscriptionStatus.PAST_DUE || subscription.getStatus() == SubscriptionStatus.INCOMPLETE) {
+        if(subscription.getStatus() == SubscriptionStatus.PAST_DUE || subscription.getStatus() == SubscriptionStatus.INCOMPLETE) {
             subscription.setStatus(SubscriptionStatus.ACTIVE);
         }
 
@@ -152,7 +135,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void markSubscriptionPastDue(String gatewaySubscriptionId) {
         Subscription subscription = getSubscription(gatewaySubscriptionId);
 
-        if (subscription.getStatus() == SubscriptionStatus.PAST_DUE) {
+        if(subscription.getStatus() == SubscriptionStatus.PAST_DUE) {
             log.debug("Subscription is already past due, gatewaySubscriptionId: {}", gatewaySubscriptionId);
             return;
         }
@@ -160,24 +143,25 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setStatus(SubscriptionStatus.PAST_DUE);
         subscriptionRepository.save(subscription);
 
+        // Notify user via email..
     }
 
     @Override
-    public boolean canCreateProject() {
-
+    public boolean canCreateNewProject() {
         Long userId = authUtil.getCurrentUserId();
         SubscriptionResponse currentSubscription = getCurrentSubscription();
+
         int countOfOwnedProjects = projectMemberRepository.countProjectOwnedByUser(userId);
 
-        if (currentSubscription.plan() == null) {
+        if(currentSubscription.plan() == null) {
             return countOfOwnedProjects < FREE_TIER_PROJECTS_ALLOWED;
         }
 
         return countOfOwnedProjects < currentSubscription.plan().maxProjects();
-
     }
 
-    //    Utility Methods:->>
+    ///  Utility methods
+
     private User getUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
@@ -185,11 +169,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private Plan getPlan(Long planId) {
         return planRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("Plain", planId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan", planId.toString()));
+
     }
 
     private Subscription getSubscription(String gatewaySubscriptionId) {
         return subscriptionRepository.findByStripeSubscriptionId(gatewaySubscriptionId).orElseThrow(() ->
                 new ResourceNotFoundException("Subscription", gatewaySubscriptionId));
     }
+
 }

@@ -6,7 +6,6 @@ import com.harshilInfotech.vibeCoding.enums.SubscriptionStatus;
 import java.time.Instant;
 
 public interface SubscriptionService {
-
     SubscriptionResponse getCurrentSubscription();
 
     void activateSubscription(Long userId, Long planId, String subscriptionId, String customerId);
@@ -19,6 +18,5 @@ public interface SubscriptionService {
 
     void markSubscriptionPastDue(String subId);
 
-    boolean canCreateProject();
-
+    boolean canCreateNewProject();
 }

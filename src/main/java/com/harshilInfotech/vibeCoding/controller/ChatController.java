@@ -2,7 +2,7 @@ package com.harshilInfotech.vibeCoding.controller;
 
 import com.harshilInfotech.vibeCoding.dto.chat.ChatRequest;
 import com.harshilInfotech.vibeCoding.dto.chat.ChatResponse;
-import com.harshilInfotech.vibeCoding.entity.ChatMessage;
+import com.harshilInfotech.vibeCoding.dto.chat.StreamResponse;
 import com.harshilInfotech.vibeCoding.service.AiGenerationService;
 import com.harshilInfotech.vibeCoding.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -16,28 +16,26 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/chat")
 public class ChatController {
 
     private final AiGenerationService aiGenerationService;
     private final ChatService chatService;
 
-    @PostMapping(value = "/api/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> streamChat(
-            @RequestBody ChatRequest request
-    ) {
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<StreamResponse>> streamChat(
+            @RequestBody ChatRequest request) {
 
         return aiGenerationService.streamResponse(request.message(), request.projectId())
-                .map(data -> ServerSentEvent.<String>builder()
+                .map(data -> ServerSentEvent.<StreamResponse>builder()
                         .data(data)
                         .build());
-
     }
 
     @GetMapping("/projects/{projectId}")
     public ResponseEntity<List<ChatResponse>> getChatHistory(
-            @PathVariable Long projectId
-    ) {
+            @PathVariable Long projectId) {
+
         return ResponseEntity.ok(chatService.getProjectChatHistory(projectId));
     }
-
 }

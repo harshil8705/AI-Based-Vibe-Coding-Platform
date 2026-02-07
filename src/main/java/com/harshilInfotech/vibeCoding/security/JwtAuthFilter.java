@@ -33,12 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            String jwtToken = requestHeaderToken.substring(7);     // .split("Bearer ")[1];
-            if (jwtToken == null || jwtToken.trim().isEmpty() || jwtToken.equals("null")) {
-                log.warn("JWT token is null or empty, skipping authentication");
-                filterChain.doFilter(request, response);
-                return;
-            }
+            String jwtToken = requestHeaderToken.split("Bearer ")[1];
 
             JwtUserPrincipal user = authUtil.verifyAccessToken(jwtToken);
             if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -46,7 +41,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         user, null, user.authorities()
                 );
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                log.info("Authenticated user: {} with userId: {}", user.username(), user.userId());
             }
 
             filterChain.doFilter(request, response);
@@ -59,6 +53,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.startsWith("/api/auth/") ||
-                path.startsWith("/api/webhooks/");
+                path.startsWith("/api/webhooks/") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui/") ||
+                path.startsWith("/swagger-ui.html") ||
+                path.equals("/swagger-ui/index.html");
     }
 }

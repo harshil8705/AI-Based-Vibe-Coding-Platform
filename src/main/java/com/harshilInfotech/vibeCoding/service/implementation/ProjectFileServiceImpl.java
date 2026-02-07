@@ -2,6 +2,7 @@ package com.harshilInfotech.vibeCoding.service.implementation;
 
 import com.harshilInfotech.vibeCoding.dto.project.FileContentResponse;
 import com.harshilInfotech.vibeCoding.dto.project.FileNode;
+import com.harshilInfotech.vibeCoding.dto.project.FileTreeResponse;
 import com.harshilInfotech.vibeCoding.entity.Project;
 import com.harshilInfotech.vibeCoding.entity.ProjectFile;
 import com.harshilInfotech.vibeCoding.error.ResourceNotFoundException;
@@ -24,8 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ProjectFileServiceImpl implements ProjectFileService {
 
@@ -39,28 +40,26 @@ public class ProjectFileServiceImpl implements ProjectFileService {
 
     private static final String BUCKET_NAME = "projects";
 
+
     @Override
-    public List<FileNode> getFileTree(Long projectId) {
+    public FileTreeResponse getFileTree(Long projectId) {
         List<ProjectFile> projectFileList = projectFileRepository.findByProjectId(projectId);
-        return projectFileMapper.toListOfFileNode(projectFileList);
+        List<FileNode> projectFileNodes = projectFileMapper.toListOfFileNode(projectFileList);
+        return new FileTreeResponse(projectFileNodes);
     }
 
     @Override
     public FileContentResponse getFileContent(Long projectId, String path) {
         String objectName = projectId + "/" + path;
-
         try (
                 InputStream is = minioClient.getObject(
                         GetObjectArgs.builder()
                                 .bucket(BUCKET_NAME)
                                 .object(objectName)
-                                .build()
-                )
-        ) {
+                                .build())) {
 
             String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             return new FileContentResponse(path, content);
-
         } catch (Exception e) {
             log.error("Failed to read file: {}/{}", projectId, path, e);
             throw new RuntimeException("Failed to read file content", e);
@@ -77,37 +76,32 @@ public class ProjectFileServiceImpl implements ProjectFileService {
         String objectKey = projectId + "/" + cleanPath;
 
         try {
-
-            // Saving the file content
             byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
             InputStream inputStream = new ByteArrayInputStream(contentBytes);
+            // saving the file content
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(projectBucket)
                             .object(objectKey)
                             .stream(inputStream, contentBytes.length, -1)
                             .contentType(determineContentType(path))
-                            .build()
-            );
+                            .build());
 
-
-            // Saving the metadata
+            // Saving the metaData
             ProjectFile file = projectFileRepository.findByProjectIdAndPath(projectId, cleanPath)
                     .orElseGet(() -> ProjectFile.builder()
                             .project(project)
                             .path(cleanPath)
-                            .minioObjectKey(objectKey)
+                            .minioObjectKey(objectKey) // Use the key we generated
                             .createdAt(Instant.now())
                             .build());
 
             file.setUpdatedAt(Instant.now());
             projectFileRepository.save(file);
-
             log.info("Saved file: {}", objectKey);
-
         } catch (Exception e) {
-            log.error("Failed to save file {}/{}: {}", projectId, cleanPath, e.getMessage(), e);
-            throw new RuntimeException("File save failed for path: " + cleanPath + " - " + e.getMessage(), e);
+            log.error("Failed to save file {}/{}", projectId, cleanPath, e);
+            throw new RuntimeException("File save failed", e);
         }
 
     }

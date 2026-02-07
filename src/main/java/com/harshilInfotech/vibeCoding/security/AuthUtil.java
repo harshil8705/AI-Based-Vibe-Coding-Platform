@@ -26,15 +26,13 @@ public class AuthUtil {
     }
 
     public String generateAccessToken(User user) {
-
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId().toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000*60*10))
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*100))
                 .signWith(getSecretKey())
                 .compact();
-
     }
 
     public JwtUserPrincipal verifyAccessToken(String token) {
@@ -46,16 +44,14 @@ public class AuthUtil {
 
         Long userId = Long.parseLong(claims.get("userId", String.class));
         String username = claims.getSubject();
-
         return new JwtUserPrincipal(userId, username, new ArrayList<>());
     }
 
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUserPrincipal userPrincipal)) {
+        if(authentication == null || !(authentication.getPrincipal() instanceof JwtUserPrincipal userPrincipal)) {
             throw new AuthenticationCredentialsNotFoundException("No JWT Found");
         }
-
         return userPrincipal.userId();
     }
 

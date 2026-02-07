@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/projects/{projectId}/members")
+@RequiredArgsConstructor
 public class ProjectMemberController {
 
     private final ProjectMemberService projectMemberService;
 
     @GetMapping
     public ResponseEntity<List<MemberResponse>> getProjectMembers(@PathVariable Long projectId) {
-        return ResponseEntity.ok(projectMemberService.getProjectMember(projectId));
+        return ResponseEntity.ok(projectMemberService.getProjectMembers(projectId));
     }
 
     @PostMapping
@@ -29,9 +29,9 @@ public class ProjectMemberController {
             @PathVariable Long projectId,
             @RequestBody @Valid InviteMemberRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(projectMemberService.inviteMember(projectId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                projectMemberService.inviteMember(projectId, request)
+        );
     }
 
     @PatchMapping("/{memberId}")
@@ -44,12 +44,11 @@ public class ProjectMemberController {
     }
 
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> deleteMember(
-            @PathVariable Long memberId,
-            @PathVariable Long projectId
+    public ResponseEntity<Void> removeMember(
+            @PathVariable Long projectId,
+            @PathVariable Long memberId
     ) {
-
-        projectMemberService.removeProjectMember(memberId, projectId);
+        projectMemberService.removeProjectMember(projectId, memberId);
         return ResponseEntity.noContent().build();
     }
 

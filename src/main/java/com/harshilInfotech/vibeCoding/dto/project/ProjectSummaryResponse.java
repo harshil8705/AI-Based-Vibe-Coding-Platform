@@ -1,11 +1,14 @@
 package com.harshilInfotech.vibeCoding.dto.project;
 
+import com.harshilInfotech.vibeCoding.enums.ProjectRole;
+
 import java.time.Instant;
 
 public record ProjectSummaryResponse(
         Long id,
-        String projectName,
+        String name,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        ProjectRole role
 ) {
 }

@@ -198,7 +198,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
         return switch (status) {
             case "active" -> SubscriptionStatus.ACTIVE;
-            case "trialing" -> SubscriptionStatus.TRAILING;
+            case "trialing" -> SubscriptionStatus.TRIALING;
             case "past_due", "unpaid", "paused", "incomplete_expired" -> SubscriptionStatus.PAST_DUE;
             case "canceled" -> SubscriptionStatus.CANCELED;
             case "incomplete" -> SubscriptionStatus.INCOMPLETE;

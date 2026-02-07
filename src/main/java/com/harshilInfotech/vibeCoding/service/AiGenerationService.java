@@ -1,9 +1,8 @@
 package com.harshilInfotech.vibeCoding.service;
 
+import com.harshilInfotech.vibeCoding.dto.chat.StreamResponse;
 import reactor.core.publisher.Flux;
 
 public interface AiGenerationService {
-
-    Flux<String> streamResponse(String message, Long projectId);
-
+    Flux<StreamResponse> streamResponse(String message, Long projectId);
 }
